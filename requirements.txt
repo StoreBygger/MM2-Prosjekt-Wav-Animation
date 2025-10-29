@@ -1,0 +1,17 @@
+contourpy
+cycler
+fonttools
+kiwisolver
+matplotlib
+numpy
+packaging
+pillow
+pip
+progressbar
+pyparsing
+PyQt6
+PyQt6-Qt6
+PyQt6_sip
+python-dateutil
+scipy
+six
