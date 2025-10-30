@@ -10,6 +10,7 @@ from matplotlib.animation import FuncAnimation
 import subprocess as sp
 import progressbar
 import os
+import argparse
 
 
 def animate_func(input_file: str, output_file: str, fps: int):
@@ -131,10 +132,43 @@ def animate_func(input_file: str, output_file: str, fps: int):
     os.remove(temp_file)
 
 
+def get_arguments():
+    parser = argparse.ArgumentParser(
+        prog="animate-wave.py",
+        description="Animate a .wav file with fft into a .mp4 file",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Write the name of the output file -o [output_file] or --output [output_file]",
+        required=True,
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        help="Write the name of the input file -i [input_file] or --input [input_file]",
+        required=True,
+    )
+    parser.add_argument(
+        "-f",
+        "--fps",
+        help="Write the num of fps to render: -f [fps] or --fps [fps9]",
+        type=int,
+        default=30,
+    )
+
+    args = parser.parse_args()
+
+    input_file = args.input
+    output_file = args.output
+    fps = args.fps
+    return input_file, output_file, fps
+
+
 def main():
-    wav_file = "./seven-nation-army.wav"
-    out_file = "./seven-nation-army-fft-60fps-nojmp.mp4"
-    animate_func(wav_file, out_file, 60)
+
+    in_file, out_file, fps = get_arguments()
+    animate_func(in_file, out_file, fps)
 
 
 if __name__ == "__main__":
