@@ -1,3 +1,4 @@
+from matplotlib.patches import BoxStyle
 import numpy as np
 import matplotlib
 
@@ -108,10 +109,23 @@ def animate_func(
 
     (line,) = axis.plot([], [], lw=1)
 
+    # Tekstboks for informasjon av graf
+    info_tekst = axis.text(
+        0.92,
+        0.95,
+        "",
+        transform=axis.transAxes,
+        fontsize=9,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.6),
+    )
+
     # initialiser animasjon linje
     def init():
         line.set_data([], [])
-        return (line,)
+        info_tekst.set_text("")
+        return (line, info_tekst)
 
     # funkjson for hver frame av animasjonen
     def animate(i):
@@ -121,7 +135,16 @@ def animate_func(
         line.set_data(x, y)
 
         bar.update(i)  # Oppdattere progressbaren
-        return (line,)
+
+        info_tekst.set_text(
+            f"N: {N}\n"
+            f"spf: {spf}\n"
+            f"T: {T:.6f}\n"
+            f"r: {sample_rate}\n"
+            f"fps: {fps}\n"
+            f"frame: {i+1}/{total_frames}"
+        )
+        return (line, info_tekst)
 
     # animer graf
 
