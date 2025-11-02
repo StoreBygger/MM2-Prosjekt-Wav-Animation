@@ -14,7 +14,7 @@ import os
 import argparse
 
 
-def animate_func(
+def animate_wav_file(
     input_file: str, output_file: str, fps: int, fft_time: float, x_lim: int
 ):
 
@@ -34,9 +34,8 @@ def animate_func(
         1, int(round(sample_rate / fps))
     )  # samples per frame, hvor stor mange samples fft-en skal ta for seg
 
-    hop = int(fft_time * sample_rate)
     T = 1.0 / sample_rate  # Tidsmellomrom mellom samples
-    N = max(2, int(round(hop)))
+    N = max(2, int(round(fft_time * sample_rate)))
 
     if x_lim == 0:
         x_lim = int(sample_rate // 2)
@@ -243,7 +242,7 @@ def get_arguments():
 def main():
 
     in_file, out_file, fps, time, x_lim = get_arguments()
-    animate_func(in_file, out_file, fps, time, x_lim)
+    animate_wav_file(in_file, out_file, fps, time, x_lim)
 
 
 if __name__ == "__main__":
