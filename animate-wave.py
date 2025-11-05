@@ -18,6 +18,9 @@ def animate_wav_file(
     input_file: str, output_file: str, fps: int, fft_time: float, x_lim: int
 ):
 
+    if fft_time == 0:
+        fft_time = 1 / fps
+
     # Read input file
     sample_rate, wav = wavfile.read(input_file)
     num_samples = wav.shape[0]
@@ -76,8 +79,12 @@ def animate_wav_file(
 
         fftwav = wav[n0:n1]  # Kutte wav-filen fra n0 til n1
 
+        window = np.hanning(N)
+
         if len(fftwav) < N:
             fftwav = np.pad(fftwav, (0, N - len(fftwav)))
+
+        fftwav *= window
         yf = rfft(fftwav)  # fft av denkuttet den
         yf = 2.0 / N * np.abs(yf[0 : N // 2])  # Fjerne negative verdier
         return yf
@@ -85,14 +92,20 @@ def animate_wav_file(
     print("PROGRESS MAX AMPLITUDE")
     maxAmpBar = progressbar.ProgressBar(maxval=total_frames, widgets=widgets)
     maxAmpBar.start()
-
-    # precompute maks y
+    # --- før animasjonen settes opp ---
+    sample_every = max(1, total_frames // 500)  # sjekk ~500 frames totalt
     ymax = 1e-9
-    for i in range(total_frames):
-        y = fft_wav(i)  # samme som i animate
-        ymax = max(ymax, np.max(y))
-        maxAmpBar.update(i)
+    for i in range(0, total_frames, sample_every):
+        y = fft_wav(i)
+        m = np.percentile(y, 99)  # robust mot enkelttopper
+        ymax = max(ymax, m)
 
+    #
+    # # precompute maks y
+    # current_max = max(1e-9, np.max(y))
+    # animate.ymax = 0.9 * getattr(animate, "ymax", current_max) + 0.1 * (1.1 * current_max)
+    # axis.set_ylim(0, animate.ymax)
+    #
     maxAmpBar.finish()
 
     bar = progressbar.ProgressBar(maxval=total_frames, widgets=widgets)
@@ -133,6 +146,12 @@ def animate_wav_file(
         y = fft_wav(i)
         line.set_data(x, y)
 
+        # Dynamisk oppdatering av y-aksen
+        # current_max = max(1e-9, np.max(y))
+        # animate.ymax = 0.9 * getattr(animate, "ymax", current_max) + 0.1 * (
+        #     1.1 * current_max
+        # )
+        # axis.set_ylim(0, animate.ymax)
         bar.update(i)  # Oppdattere progressbaren
 
         info_tekst.set_text(
@@ -158,7 +177,7 @@ def animate_wav_file(
 
     # Lag temp-fil og lagre graf på den
     temp_file = "./temp-fft-no-sound.mp4"
-    anim.save(temp_file, writer="ffmpeg", fps=fps)
+    anim.save(temp_file, writer="ffmpeg", fps=fps, dpi=300)
     bar.finish()
     print("FINISHED FOURIER TRANSFORM, ADDING AUDIO NOW")
     # Legg til lydfilen over animasjons-videoen
@@ -232,9 +251,6 @@ def get_arguments():
     fps = args.fps
     time = args.time
     x_lim = args.x_lim
-
-    if time == 0:
-        time = 1 / fps
 
     return input_file, output_file, fps, time, x_lim
 
