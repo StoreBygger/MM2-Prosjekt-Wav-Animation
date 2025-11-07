@@ -72,6 +72,10 @@ def animate_wav_file(
     # Lage liste for verdier langs x-aksen
     xf = rfftfreq(N, T)[: N // 2]
 
+    window = np.hanning(N)
+    CG = window.mean()
+    scale = 1.0 / (N * CG)
+
     # Regne ut ny fft for hvert bilde
     def fft_wav(n):
         n0 = max(0, int(n) * spf - N // 2)  # Start sample -n
@@ -79,22 +83,28 @@ def animate_wav_file(
 
         fftwav = wav[n0:n1]  # Kutte wav-filen fra n0 til n1
 
-        window = np.hanning(N)
-
         if len(fftwav) < N:
             fftwav = np.pad(fftwav, (0, N - len(fftwav)))
 
         fftwav *= window
+
         yf = rfft(fftwav)  # fft av denkuttet den
-        yf = 2.0 / N * np.abs(yf[0 : N // 2])  # Fjerne negative verdier
+        # beregne korrekt en-sidig amplitude
+        mag = np.abs(yf[: N // 2 + 1])
+
+        if N > 2:
+            mag[1:-1] *= 2.0
+
+        yf = scale * mag[: N // 2]  # Fjerne negative verdier
+        ref = 1  # max(1e-12, np.max(yf))
         return yf
 
     print("PROGRESS MAX AMPLITUDE")
     maxAmpBar = progressbar.ProgressBar(maxval=total_frames, widgets=widgets)
     maxAmpBar.start()
     # --- før animasjonen settes opp ---
-    sample_every = max(1, total_frames // 500)  # sjekk ~500 frames totalt
-    ymax = 1e-9
+    sample_every = 1  # max(1, total_frames // 2000)  # sjekk ~2000 frames totalt
+    ymax = 0
     for i in range(0, total_frames, sample_every):
         y = fft_wav(i)
         m = np.percentile(y, 99)  # robust mot enkelttopper
@@ -184,6 +194,9 @@ def animate_wav_file(
     sp.run(
         [
             "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
             "-y",
             "-i",
             temp_file,
